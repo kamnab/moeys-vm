@@ -1,11 +1,23 @@
+# Redirect HTTP to HTTPS
 server {
-    listen 80;  # Listens on port 80 for HTTP traffic
-    server_name webadm.moeys.gov.kh;  # Specifies the server name (IP address in this case)
-    root /var/www/html/admin/dist;  # Defines the root directory for static files
+    listen 80;
+    server_name webadm.moeys.gov.kh www.webadm.moeys.gov.kh;
+    return 301 https://$host$request_uri;
+}
 
-    index index.html index.htm;  # Specifies the default index files
+# HTTPS server block
+server {
+    listen 443 ssl;
+    server_name webadm.moeys.gov.kh www.webadm.moeys.gov.kh;
 
-	# Logging
+    ssl_certificate /etc/ssl/moeys/moeys.gov.kh.crt;
+    ssl_certificate_key /etc/ssl/moeys/moeys.gov.kh.key;
+
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers on;
+
+    # Logging
     access_log /var/log/nginx/webadm.moeys.gov.kh.access.log;
     error_log /var/log/nginx/webadm.moeys.gov.kh.error.log;
 
@@ -15,13 +27,15 @@ server {
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
         proxy_set_header Host $host;
-		proxy_set_header X-Real-IP $remote_addr;
-		proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-		proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
         proxy_cache_bypass $http_upgrade;
-		proxy_connect_timeout 7200;
-		proxy_send_timeout 7200;
-		proxy_read_timeout 7200;
-		send_timeout 7200;
+
+        proxy_connect_timeout 7200;
+        proxy_send_timeout 7200;
+        proxy_read_timeout 7200;
+        send_timeout 7200;
     }
 }
+
