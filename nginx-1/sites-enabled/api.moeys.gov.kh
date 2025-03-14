@@ -1,31 +1,35 @@
 server {
-    listen 81;
-    listen [::]:81;
+    listen 443 ssl;
+    listen [::]:443 ssl;
     server_name api.moeys.gov.kh;
-    root /var/www/html/api/public;
 
+    root /var/www/html/api/public;
+    index index.php;
+    charset utf-8;
+
+    ssl_certificate /etc/ssl/moeys/moeys.gov.kh.crt;
+    ssl_certificate_key /etc/ssl/moeys/moeys.gov.kh.key;
+
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+
+    # Security headers
     add_header X-Frame-Options "SAMEORIGIN";
     add_header X-Content-Type-Options "nosniff";
     add_header X-XSS-Protection "1; mode=block";
     add_header Content-Security-Policy "default-src 'self';";
     add_header Referrer-Policy "no-referrer-when-downgrade";
 
-    # Increase client body size and adjust buffers
+    # Timeout settings
     client_max_body_size 1G;
     client_body_buffer_size 128k;
-	
-	# Adjust timeout settings
     client_body_timeout 7200s;
     client_header_timeout 7200s;
     send_timeout 7200s;
 
-    index index.php;
-
-    charset utf-8;
-
     # Logging
-    access_log /var/log/nginx/api.uat.moeys.gov.kh.access.log;
-    error_log /var/log/nginx/api.uat.moeys.gov.kh.error.log;
+    access_log /var/log/nginx/api.moeys.gov.kh.access.log;
+    error_log /var/log/nginx/api.moeys.gov.kh.error.log;
 
     location / {
         try_files $uri $uri/ /index.php?$query_string;
@@ -40,6 +44,7 @@ server {
         fastcgi_pass unix:/var/run/php/php8.3-fpm.sock;
         fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
         include fastcgi_params;
+		fastcgi_read_timeout 7200s;
         fastcgi_hide_header X-Powered-By;
     }
 
@@ -48,5 +53,10 @@ server {
     }
 }
 
+server {
+    listen 80;
+    listen [::]:80;
+    server_name api.moeys.gov.kh;
 
-
+    return 301 https://$host$request_uri;
+}
